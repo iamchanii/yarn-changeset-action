@@ -27,7 +27,7 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
 
   let { changesets } = await readChangesetState();
 
-  let autoPublish = core.getInput("autoPublish") === "true";
+  let autoPublish = core.getBooleanInput("autoPublish");
   let hasChangesets = changesets.length !== 0;
 
   core.setOutput("published", "false");
