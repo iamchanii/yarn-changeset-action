@@ -200,7 +200,7 @@ export async function runVersion({
   }
 
   // update lock file
-  await exec("yarn", ["install"], { cwd });
+  await exec("yarn", ["install", "--mode=update-lockfile"], { cwd });
 
   let searchQuery = `repo:${repo}+state:open+head:${versionBranch}+base:${branch}`;
   let searchResultPromise = octokit.search.issuesAndPullRequests({
