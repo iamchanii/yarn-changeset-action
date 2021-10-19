@@ -8,6 +8,10 @@ inputs:
     description: "A boolean value to enable auto publishing"
     required: false
     default: "false"
+  dedupe:
+    description: "A boolean value to enable auto deduplication"
+    required: false
+    default: "false"
   version:
     description: "The command to update version, edit CHANGELOG, read and delete changesets. Default to `yarn changeset version` if not provided"
     required: false

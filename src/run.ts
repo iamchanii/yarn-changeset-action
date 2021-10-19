@@ -174,6 +174,7 @@ export async function runVersion({
   prTitle = "Version Packages",
   commitMessage = "Version Packages",
   autoPublish = false,
+  dedupe = false,
 }: VersionOptions) {
   let repo = `${github.context.repo.owner}/${github.context.repo.repo}`;
   let branch = github.context.ref.replace("refs/heads/", "");
@@ -192,6 +193,9 @@ export async function runVersion({
   // update lock file
   await exec("yarn", ["config", "set", "enableImmutableInstalls", "false"], { cwd });
   await exec("yarn", ["install", "--mode=update-lockfile"], { cwd });
+  if (dedupe) {
+    await exec("yarn", ["dedupe"], { cwd });
+  }
 
   let searchQuery = `repo:${repo}+state:open+head:${versionBranch}+base:${branch}`;
   let searchResultPromise = octokit.search.issuesAndPullRequests({

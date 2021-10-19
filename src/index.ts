@@ -28,6 +28,7 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
   let { changesets } = await readChangesetState();
 
   let autoPublish = core.getBooleanInput("autoPublish");
+  let dedupe = core.getBooleanInput("dedupe");
   let hasChangesets = changesets.length !== 0;
 
   core.setOutput("published", "false");
@@ -41,6 +42,7 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
       prTitle: getOptionalInput("title"),
       commitMessage: getOptionalInput("commit"),
       autoPublish,
+      dedupe,
     });
   } else {
     console.log("No changesets found");
