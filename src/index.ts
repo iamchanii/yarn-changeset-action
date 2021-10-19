@@ -29,7 +29,6 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
 
   let autoPublish = core.getInput("autoPublish") === "true";
   let hasChangesets = changesets.length !== 0;
-  let hasPublishScript = !!publishScript;
 
   core.setOutput("published", "false");
   core.setOutput("publishedPackages", "[]");
@@ -41,7 +40,7 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
       githubToken,
       prTitle: getOptionalInput("title"),
       commitMessage: getOptionalInput("commit"),
-      hasPublishScript,
+      autoPublish,
     });
   } else {
     console.log("No changesets found");
