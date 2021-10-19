@@ -9,15 +9,18 @@ inputs:
     required: false
     default: "false"
   version:
-    description: "The command to update version, edit CHANGELOG, read and delete changesets. Default to `changeset version` if not provided"
+    description: "The command to update version, edit CHANGELOG, read and delete changesets. Default to `yarn changeset version` if not provided"
     required: false
+    default: "yarn changeset version"
   commit:
     description: |
       The commit message. Default to `Version Packages`
     required: false
+    default: "Version Packages"
   title:
     description: The pull request title. Default to `Version Packages`
     required: false
+    default: "Version Packages"
 outputs:
   published:
     description: A boolean value to indicate whether a publishing is happened or not

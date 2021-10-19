@@ -159,7 +159,7 @@ const requireChangesetsCliPkgJson = (cwd: string) => {
 };
 
 type VersionOptions = {
-  script?: string;
+  script: string;
   githubToken: string;
   cwd?: string;
   prTitle?: string;
@@ -186,18 +186,8 @@ export async function runVersion({
 
   let versionsByDirectory = await getVersionsByDirectory(cwd);
 
-  if (script) {
-    let [versionCommand, ...versionArgs] = script.split(/\s+/);
-    await exec(versionCommand, versionArgs, { cwd });
-  } else {
-    let changesetsCliPkgJson = requireChangesetsCliPkgJson(cwd);
-    let cmd = semver.lt(changesetsCliPkgJson.version, "2.0.0")
-      ? "bump"
-      : "version";
-    await exec("node", [resolveFrom(cwd, "@changesets/cli/bin.js"), cmd], {
-      cwd,
-    });
-  }
+  let [versionCommand, ...versionArgs] = script.split(/\s+/);
+  await exec(versionCommand, versionArgs, { cwd });
 
   // update lock file
   await exec("yarn", ["install", "--mode=update-lockfile"], { cwd });
