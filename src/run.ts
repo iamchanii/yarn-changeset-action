@@ -49,7 +49,7 @@ const createRelease = async (
 };
 
 type PublishOptions = {
-  script: string;
+  npmToken: string;
   githubToken: string;
   cwd?: string;
 };
@@ -66,80 +66,76 @@ type PublishResult =
     };
 
 export async function runPublish({
-  script,
+  npmToken,
   githubToken,
   cwd = process.cwd(),
 }: PublishOptions): Promise<PublishResult> {
   let octokit = github.getOctokit(githubToken);
-  let [publishCommand, ...publishArgs] = script.split(/\s+/);
 
-  let changesetPublishOutput = await execWithOutput(
-    publishCommand,
-    publishArgs,
-    { cwd }
+  await exec(
+    "yarn",
+    [
+      "config"
+      "set",
+      "npmAuthToken",
+      npmToken,
+    ],
+    { cwd },
   );
 
-  await gitUtils.pushTags();
+  let changesetPublishOutput = await execWithOutput(
+    "yarn",
+    [
+      "workspaces",
+      "foreach",
+      "-ipv",
+      "--no-private",
+      "npm",
+      "publish",
+      "--tolerate-republish",
+    ],
+    { cwd },
+  );
+
 
   let { packages, tool } = await getPackages(cwd);
-  let releasedPackages: Package[] = [];
+  if (tool !== "yarn") {
+    throw new Error("Only Yarn is supported");
+  }
 
-  if (tool !== "root") {
-    let newTagRegex = /New tag:\s+(@[^/]+\/[^@]+|[^/]+)@([^\s]+)/;
-    let packagesByName = new Map(packages.map((x) => [x.packageJson.name, x]));
+  let publishedPattern = /\[(.+)\]:.*Package archive published/;
+  let publishedPackages: Package[] = [];
 
-    for (let line of changesetPublishOutput.stdout.split("\n")) {
-      let match = line.match(newTagRegex);
-      if (match === null) {
-        continue;
-      }
-      let pkgName = match[1];
-      let pkg = packagesByName.get(pkgName);
-      if (pkg === undefined) {
-        throw new Error(
-          `Package "${pkgName}" not found.` +
-            "This is probably a bug in the action, please open an issue"
-        );
-      }
-      releasedPackages.push(pkg);
+  let lines = changesetPublishOutput.stdout.split("\n");
+  for (let line of lines) {
+    let match = line.match(newTagRegex);
+    if (match === null) {
+      continue;
     }
-
-    await Promise.all(
-      releasedPackages.map((pkg) =>
-        createRelease(octokit, {
-          pkg,
-          tagName: `${pkg.packageJson.name}@${pkg.packageJson.version}`,
-        })
-      )
-    );
-  } else {
-    if (packages.length === 0) {
+    let pkgName = match[1];
+    let pkg = packagesByName.get(pkgName);
+    if (pkg === undefined) {
       throw new Error(
-        `No package found.` +
+        `Package "${pkgName}" not found.` +
           "This is probably a bug in the action, please open an issue"
       );
     }
-    let pkg = packages[0];
-    let newTagRegex = /New tag:/;
-
-    for (let line of changesetPublishOutput.stdout.split("\n")) {
-      let match = line.match(newTagRegex);
-
-      if (match) {
-        releasedPackages.push(pkg);
-        await createRelease(octokit, {
-          pkg,
-          tagName: `v${pkg.packageJson.version}`,
-        });
-        break;
-      }
-    }
+    publishedPackages.push(pkg);
   }
 
-  if (releasedPackages.length) {
+  await Promise.all(
+    publishedPackages.map((pkg) =>
+      createRelease(octokit, {
+        pkg,
+        tagName: `${pkg.packageJson.name}@${pkg.packageJson.version}`,
+      })
+    )
+  );
+
+  if (publishedPackages.length) {
     return {
       published: true,
-      publishedPackages: releasedPackages.map((pkg) => ({
+      publishedPackages: publishedPackages.map((pkg) => ({
         name: pkg.packageJson.name,
         version: pkg.packageJson.version,
       })),
@@ -202,6 +198,9 @@ export async function runVersion({
       cwd,
     });
   }
+
+  // update lock file
+  await exec("yarn", ["install"], { cwd });
 
   let searchQuery = `repo:${repo}+state:open+head:${versionBranch}+base:${branch}`;
   let searchResultPromise = octokit.search.issuesAndPullRequests({

@@ -1,4 +1,5 @@
 import * as core from "@actions/core";
+import { exec } from "@actions/exec";
 import fs from "fs-extra";
 import * as gitUtils from "./gitUtils";
 import { runPublish, runVersion } from "./run";
@@ -8,6 +9,7 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
 
 (async () => {
   let githubToken = process.env.GITHUB_TOKEN;
+  let npmToken = process.env.NPM_TOKEN;
 
   if (!githubToken) {
     core.setFailed("Please add the GITHUB_TOKEN to the changesets action");
@@ -25,7 +27,7 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
 
   let { changesets } = await readChangesetState();
 
-  let publishScript = core.getInput("publish");
+  let autoPublish = core.getInput("autoPublish") === "true";
   let hasChangesets = changesets.length !== 0;
   let hasPublishScript = !!publishScript;
 
@@ -33,28 +35,27 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
   core.setOutput("publishedPackages", "[]");
   core.setOutput("hasChangesets", String(hasChangesets));
 
-  switch (true) {
-    case !hasChangesets && !hasPublishScript:
-      console.log("No changesets found");
-      return;
-    case !hasChangesets && hasPublishScript: {
-      console.log(
-        "No changesets found, attempting to publish any unpublished packages to npm"
-      );
+  if (hasChangesets) {
+    await runVersion({
+      script: getOptionalInput("version"),
+      githubToken,
+      prTitle: getOptionalInput("title"),
+      commitMessage: getOptionalInput("commit"),
+      hasPublishScript,
+    });
+  } else {
+    console.log("No changesets found");
 
-      let npmrcPath = `${process.env.HOME}/.npmrc`;
-      if (fs.existsSync(npmrcPath)) {
-        console.log("Found existing .npmrc file");
-      } else {
-        console.log("No .npmrc file found, creating one");
-        fs.writeFileSync(
-          npmrcPath,
-          `//registry.npmjs.org/:_authToken=${process.env.NPM_TOKEN}`
-        );
+    if (autoPublish) {
+      if (!npmToken) {
+        core.setFailed("Please add the NPM_TOKEN to the changesets action");
+        return;
       }
 
+      console.log("Attempting to publish any unpublished packages to npm");
+
       const result = await runPublish({
-        script: publishScript,
+        npmToken,
         githubToken,
       });
 
@@ -62,20 +63,10 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
         core.setOutput("published", "true");
         core.setOutput(
           "publishedPackages",
-          JSON.stringify(result.publishedPackages)
+          JSON.stringify(result.publishedPackages),
         );
       }
-      return;
     }
-    case hasChangesets:
-      await runVersion({
-        script: getOptionalInput("version"),
-        githubToken,
-        prTitle: getOptionalInput("title"),
-        commitMessage: getOptionalInput("commit"),
-        hasPublishScript,
-      });
-      return;
   }
 })().catch((err) => {
   console.error(err);
