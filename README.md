@@ -1,20 +1,29 @@
 # Changesets Release Action
 
+This is fork for **Yarn 2+ (only)** support
+
+Solving problems of original action:
+- It doesn't update lockfile on version bumping
+- It doesn't handle [workspace protocol](https://yarnpkg.com/features/protocols/#workspace) on publishing
+
+----
+
 This action for [Changesets](https://github.com/atlassian/changesets) creates a pull request with all of the package versions updated and changelogs updated and when there are new changesets on master, the PR will be updated. When you're ready, you can merge the pull request and you can either publish the packages to npm manually or setup the action to do it for you.
 
 ## Usage
 
 ### Inputs
 
-- publish - The command to use to build and publish packages
-- version - The command to update version, edit CHANGELOG, read and delete changesets. Default to `changeset version` if not provided
-- commit - The commit message to use. Default to `Version Packages`
-- title - The pull request title. Default to `Version Packages`
+- `autoPublish` - The flag to enable auto-publishing packages. Default to `false`
+- `dedupe` - The flag to enable auto-deduplication of dependencies. Default to `false`
+- `version` - The command to update version, edit CHANGELOG, read and delete changesets. Default to `yarn changeset version` if not provided
+- `commit` - The commit message to use. Default to `Version Packages`
+- `title` - The pull request title. Default to `Version Packages`
 
 ### Outputs
 
-- published - A boolean value to indicate whether a publishing is happened or not
-- publishedPackages - A JSON array to present the published packages. The format is `[{"name": "@xx/xx", "version": "1.2.0"}, {"name": "@xx/xy", "version": "0.8.9"}]`
+- `published` - A boolean value to indicate whether a publishing is happened or not
+- `publishedPackages` - A JSON array to present the published packages. The format is `[{"name": "@xx/xx", "version": "1.2.0"}, {"name": "@xx/xy", "version": "0.8.9"}]`
 
 ### Example workflow:
 
@@ -36,21 +45,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
         with:
           # This makes Actions fetch all Git history so that Changesets can generate changelogs with the correct commits
           fetch-depth: 0
 
-      - name: Setup Node.js 12.x
-        uses: actions/setup-node@master
+      - name: Setup Node.js 16.x
+        uses: actions/setup-node@v2
         with:
-          node-version: 12.x
+          node-version: 16.x
 
       - name: Install Dependencies
-        run: yarn
+        run: yarn install --immutable
 
       - name: Create Release Pull Request
-        uses: changesets/action@master
+        uses: cometkim/yarn-changeset-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -73,25 +82,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
         with:
           # This makes Actions fetch all Git history so that Changesets can generate changelogs with the correct commits
           fetch-depth: 0
 
-      - name: Setup Node.js 12.x
-        uses: actions/setup-node@master
+      - name: Setup Node.js 16.x
+        uses: actions/setup-node@v2
         with:
-          node-version: 12.x
+          node-version: 16.x
 
       - name: Install Dependencies
-        run: yarn
+        run: yarn install --immutable
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
-        uses: changesets/action@master
+        uses: cometkim/yarn-changeset-action@master
         with:
-          # This expects you to have a script called release which does a build for your packages and calls changeset publish
-          publish: yarn release
+          autoPublish: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -102,31 +110,11 @@ jobs:
         run: my-slack-bot send-notification --message "A new version of ${GITHUB_REPOSITORY} was published!"
 ```
 
-By default the GitHub Action creates a `.npmrc` file with the following content:
-
-```
-//registry.npmjs.org/:_authToken=${process.env.NPM_TOKEN}
-```
-
-However, if a `.npmrc` file is found, the GitHub Action does not recreate the file. This is useful if you need to configure the `.npmrc` file on your own.
-For example, you can add a step before running the Changesets GitHub Action:
-
-```yml
-- name: Creating .npmrc
-  run: |
-    cat << EOF > "$HOME/.npmrc"
-      email=my@email.com
-      //registry.npmjs.org/:_authToken=$NPM_TOKEN
-    EOF
-  env:
-    NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-```
-
 #### With version script
 
 If you need to add additional logic to the version command, you can do so by using a version script.
 
-If the version script is present, this action will run that script instead of `changeset version`, so please make sure that your script calls `changeset version` at some point. All the changes made by the script will be included in the PR.
+If the version script is present, this action will run that script instead of `yarn changeset version`, so please make sure that your script calls `yarn changeset version` at some point. All the changes made by the script will be included in the PR.
 
 ```yml
 name: Release
@@ -142,34 +130,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js 12.x
-        uses: actions/setup-node@master
+      - name: Setup Node.js 16.x
+        uses: actions/setup-node@v2
         with:
-          node-version: 12.x
+          node-version: 16.x
 
       - name: Install Dependencies
-        run: yarn
+        run: yarn install --immutable
 
       - name: Create Release Pull Request
-        uses: changesets/action@master
+        uses: cometkim/yarn-changeset-version@master
         with:
-          # this expects you to have a npm script called version that runs some logic and then calls `changeset version`.
+          # this expects you to have a npm script called version that runs some logic and then calls `yarn changeset version`.
           version: yarn version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
-
-#### With Yarn 2 / Plug'n'Play
-
-If you are using [Yarn Plug'n'Play](https://yarnpkg.com/features/pnp), you should use a custom `version` command so that the action can resolve the `changeset` CLI:
-
-```yaml
-- uses: changesets/action@master
-  with:
-    version: yarn changeset version
-    ...
 ```
