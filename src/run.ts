@@ -190,6 +190,7 @@ export async function runVersion({
   await exec(versionCommand, versionArgs, { cwd });
 
   // update lock file
+  await exec("yarn", ["config", "set", "enableImmutableInstalls", "false"], { cwd });
   await exec("yarn", ["install", "--mode=update-lockfile"], { cwd });
 
   let searchQuery = `repo:${repo}+state:open+head:${versionBranch}+base:${branch}`;
