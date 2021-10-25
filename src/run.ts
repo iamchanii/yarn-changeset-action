@@ -113,13 +113,7 @@ export async function runPublish({
       continue;
     }
     let pkgName = match[1];
-    let pkg = packagesByName.get(pkgName);
-    if (pkg === undefined) {
-      throw new Error(
-        `Package "${pkgName}" not found.` +
-          "This is probably a bug in the action, please open an issue"
-      );
-    }
+    let pkg = require(pkgName + '/package.json');
     publishedPackages.push(pkg);
   }
 
