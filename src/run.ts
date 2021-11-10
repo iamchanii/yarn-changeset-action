@@ -93,12 +93,14 @@ export async function runPublish({
     throw new Error("Only Yarn is supported");
   }
 
-  let publishedPattern = /\[(.+)\]:.*Package archive published/;
+  let getPublishedPattern = () => /\[(.+)\]:.*Package archive published/;
   let publishedPackages: Package[] = [];
 
   let lines = changesetPublishOutput.stdout.split("\n");
   for (let line of lines) {
-    let match = line.replace(/\\u001b[^m]*?m/g, "").match(publishedPattern);
+    let match = line
+      .replace(/\\u001b[^m]*?m/g, "")
+      .match(getPublishedPattern());
     console.log(match);
     if (match === null) {
       continue;
