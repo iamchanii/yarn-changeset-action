@@ -89,6 +89,7 @@ export async function runPublish({
   );
 
   let { packages, tool } = await getPackages(cwd);
+  console.log(packages);
   if (tool !== "yarn") {
     throw new Error("Only Yarn is supported");
   }
@@ -108,8 +109,12 @@ export async function runPublish({
       continue;
     }
     let pkgName = match[1];
-    let pkg = require(pkgName + "/package.json");
-    publishedPackages.push(pkg);
+    let pkg = packages.find(
+      (_package) => _package.packageJson.name === pkgName
+    );
+    if (pkg) {
+      publishedPackages.push(pkg);
+    }
   }
 
   await Promise.all(
