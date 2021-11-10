@@ -99,6 +99,7 @@ export async function runPublish({
   let lines = changesetPublishOutput.stdout.split("\n");
   for (let line of lines) {
     let match = line.replace(/\\u001b[^m]*?m/g, "").match(publishedPattern);
+    console.log(match);
     if (match === null) {
       continue;
     }
