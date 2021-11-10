@@ -72,16 +72,7 @@ export async function runPublish({
 }: PublishOptions): Promise<PublishResult> {
   let octokit = github.getOctokit(githubToken);
 
-  await exec(
-    "yarn",
-    [
-      "config"
-      "set",
-      "npmAuthToken",
-      npmToken,
-    ],
-    { cwd },
-  );
+  await exec("yarn", ["config", "set", "npmAuthToken", npmToken], { cwd });
 
   let changesetPublishOutput = await execWithOutput(
     "yarn",
@@ -94,9 +85,8 @@ export async function runPublish({
       "publish",
       "--tolerate-republish",
     ],
-    { cwd },
+    { cwd }
   );
-
 
   let { packages, tool } = await getPackages(cwd);
   if (tool !== "yarn") {
@@ -113,7 +103,7 @@ export async function runPublish({
       continue;
     }
     let pkgName = match[1];
-    let pkg = require(pkgName + '/package.json');
+    let pkg = require(pkgName + "/package.json");
     publishedPackages.push(pkg);
   }
 
@@ -159,6 +149,7 @@ type VersionOptions = {
   prTitle?: string;
   commitMessage?: string;
   autoPublish?: boolean;
+  dedupe?: boolean;
 };
 
 export async function runVersion({
@@ -185,7 +176,9 @@ export async function runVersion({
   await exec(versionCommand, versionArgs, { cwd });
 
   // update lock file
-  await exec("yarn", ["config", "set", "enableImmutableInstalls", "false"], { cwd });
+  await exec("yarn", ["config", "set", "enableImmutableInstalls", "false"], {
+    cwd,
+  });
   await exec("yarn", ["install", "--mode=update-lockfile"], { cwd });
   if (dedupe) {
     await exec("yarn", ["dedupe"], { cwd });
@@ -200,7 +193,7 @@ export async function runVersion({
   let prBodyPromise = (async () => {
     return (
       `This PR was opened by the [Changesets release](https://github.com/changesets/action) GitHub action. When you're ready to do a release, you can merge this and ${
-        autoPublish 
+        autoPublish
           ? `the packages will be published to npm automatically`
           : `publish to npm yourself or [setup this action to publish automatically](https://github.com/changesets/action#with-publishing)`
       }. If you're not ready to do a release yet, that's fine, whenever you add more changesets to ${branch}, this PR will be updated.

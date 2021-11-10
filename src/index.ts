@@ -37,7 +37,7 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
 
   if (hasChangesets) {
     await runVersion({
-      script: getOptionalInput("version"),
+      script: getOptionalInput("version")!,
       githubToken,
       prTitle: getOptionalInput("title"),
       commitMessage: getOptionalInput("commit"),
@@ -64,7 +64,7 @@ const getOptionalInput = (name: string) => core.getInput(name) || undefined;
         core.setOutput("published", "true");
         core.setOutput(
           "publishedPackages",
-          JSON.stringify(result.publishedPackages),
+          JSON.stringify(result.publishedPackages)
         );
       }
     }

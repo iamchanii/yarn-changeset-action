@@ -77,6 +77,7 @@ describe("version", () => {
     );
 
     await runVersion({
+      script: "yarn changeset version",
       githubToken: "@@GITHUB_TOKEN",
       cwd,
     });
@@ -108,6 +109,7 @@ describe("version", () => {
     );
 
     await runVersion({
+      script: "yarn changeset version",
       githubToken: "@@GITHUB_TOKEN",
       cwd,
     });
@@ -139,6 +141,7 @@ describe("version", () => {
     );
 
     await runVersion({
+      script: "yarn changeset version",
       githubToken: "@@GITHUB_TOKEN",
       cwd,
     });
