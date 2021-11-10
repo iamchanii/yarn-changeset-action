@@ -98,6 +98,7 @@ export async function runPublish({
 
   let lines = changesetPublishOutput.stdout.split("\n");
   for (let line of lines) {
+    console.log(JSON.stringify(line));
     let match = line
       .replace(/\\u001b[^m]*?m/g, "")
       .match(getPublishedPattern());
