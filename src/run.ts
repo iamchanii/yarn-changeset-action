@@ -89,8 +89,7 @@ export async function runPublish({
   );
 
   let { packages, tool } = await getPackages(cwd);
-  console.log(packages);
-  if (tool !== "yarn") {
+  if (!tool.startsWith("yarn")) {
     throw new Error("Only Yarn is supported");
   }
 
