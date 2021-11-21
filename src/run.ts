@@ -88,10 +88,7 @@ export async function runPublish({
     { cwd }
   );
 
-  let { packages, tool } = await getPackages(cwd);
-  if (!tool.startsWith("yarn")) {
-    throw new Error("Only Yarn is supported");
-  }
+  let { packages } = await getPackages(cwd);
 
   let publishedPattern = /\[(.+)\]:.*Package archive published/;
   let publishedPackages: Package[] = [];
